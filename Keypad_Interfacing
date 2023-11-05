@@ -1,0 +1,36 @@
+MOV P2,#0FFH	;make P2 an input port
+K1: MOV P1,#0	;ground all rows at once
+MOV A,P2	;read all col
+;(ensure keys open)
+ANL A,00001111B	;masked unused bits
+CJNE A,#00001111B,K1	;till all keys release
+ 
+
+K2: ACALL DELAY	;call 20 msec delay
+MOV A,P2	;see if any key is pressed
+ANL A,00001111B	;mask unused bits CJNE A,#00001111B,OVER	;key pressed, find row SJMP K2	;check till key pressed
+OVER: ACALL DELAY	;wait 20 msec debounce time MOV A,P2	;check key closure
+ANL A,00001111B	;mask unused bits CJNE A,#00001111B,OVER1	;key pressed, find row SJMP K2	;if none, keep polling OVER1: MOV P1, #11111110B	;ground row 0
+MOV A,P2	;read all columns
+ANL A,#00001111B	;mask unused bits CJNE A,#00001111B,ROW_0	;key row 0, find col. MOV P1,#11111101B	;ground row 1
+MOV A,P2	;read all columns
+ANL A,#00001111B	;mask unused bits CJNE A,#00001111B,ROW_1	;key row 1, find col. MOV P1,#11111011B	;ground row 2
+MOV A,P2	;read all columns
+ANL A,#00001111B	;mask unused bits CJNE A,#00001111B,ROW_2	;key row 2, find col. MOV P1,#11110111B	;ground row 3
+MOV A,P2	;read all columns
+ANL A,#00001111B	;mask unused bits CJNE A,#00001111B,ROW_3	;key row 3, find col. LJMP K2	;if none, false input,
+ROW_0: MOV DPTR,#KCODE0	;set DPTR=start of row 0 SJMP FIND	;find col. Key belongs to ROW_1: MOV DPTR,#KCODE1	;set DPTR=start of row SJMP FIND	;find col. Key belongs to
+ 
+
+
+MATCH: CLR A	;set A=0 (match is found)
+MOVC A,@A+DPTR	;get ASCII from table
+MOV P0,A	;display pressed key LJMP K1
+
+
+
+; ASCII LOOK-UP TABLE FOR EACH ROW ORG 300H
+KCODE0: DB ‘0’,’1’,’2’,’3’	;ROW 0
+KCODE1: DB ‘4’,’5’,’6’,’7’	;ROW 1
+KCODE2: DB ‘8’,’9’,’A’,’B’	;ROW 2
+KCODE3: DB ‘C’,’D’,’E’,’F’	;ROW 3
